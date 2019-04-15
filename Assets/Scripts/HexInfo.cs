@@ -3,8 +3,14 @@ using UnityEngine;
 
 [Serializable]
 public class HexInfo {
+	public bool Occupied { 
+		get => Filled || TowerHead != null;
+	}
+
 	public bool Filled { get; private set; }
 	public bool Locked { get; private set; } // whatever this point is assigned to originally cannot be replaced
+
+	public Tower TowerHead { get; set; }
 
 	public Vector3 PhysicalCoordinates;
 	public HexCoordinates Coordinates;

@@ -18,15 +18,21 @@ public class LevelManager : ContextManager
 		}
 	}
 
-	public GameObject TowerPrefab;
-	private GameObject Tower;
+	public Tower TowerPrefab;
+	private Tower Tower;
+
+	public Line LinePrefab;
+	private Line Line;
 
 	private Camera main;
 	private InputPackage lastInput;
 
-	private float maxCameraSize = 15f;
+	private float maxCameraSize = 11f;
 	private float minCameraSize = 5f;
 	private float cameraSizeDiff { get => maxCameraSize - minCameraSize; }
+
+	private bool dragging = false;
+	private bool lineCreationInProgress = false;
 
 	public override void Awake() {
 		base.Awake();
@@ -36,7 +42,7 @@ public class LevelManager : ContextManager
 	public override void Start()
     {
         // player = GameObject.FindGameObjectWithTag("Player").GetComponent<Player>();
-		Tower = GameObject.Instantiate(TowerPrefab);
+		Tower = GameObject.Instantiate<Tower>(TowerPrefab);
     }
 
 	private void SetCameraPosition(Vector3 position) {
@@ -67,39 +73,70 @@ public class LevelManager : ContextManager
 		if(Mathf.Abs(p.MouseWheelDelta) > 0.2f) {
 			float camSize = main.orthographicSize - p.MouseWheelDelta;
 			float prevCamSize = main.orthographicSize;
-			main.orthographicSize = Mathf.Clamp(camSize, 5f, 15f);
+			main.orthographicSize = Mathf.Clamp(camSize, minCameraSize, maxCameraSize);
 
 			// mouse pointer world space should not change when zooming
 			Vector3 pointerPositionAfterCamResize = main.ScreenToWorldPoint(p.MousePositionScreenSpace);
 			SetCameraPosition(main.transform.position + (p.MousePositionWorldSpace - pointerPositionAfterCamResize));
 		}
 
-		// x,y is position
-		// z is rotation
-		Vector3 posRot = Grid.TryGetTowerPlacement(p.MousePositionWorldSpace, out bool validTowerPosition, Tower.transform.lossyScale.y/4f);
-		if(validTowerPosition) {
-			Tower.SetActive(true);
-			Tower.transform.position = new Vector3(posRot.x, posRot.y, -0.5f);	
-			Tower.transform.rotation = Quaternion.Euler(0,0,posRot.z);
-		}
-		else {
-			Tower.SetActive(false);
+		if(!lineCreationInProgress) {
+			Grid.TryGetTowerLocation(p.MousePositionWorldSpace, Tower);
 		}
 
-		if((lastInput == null || !lastInput.LeftMouse) && p.LeftMouse) {
+		// mouseup
+		if ((lastInput != null && lastInput.LeftMouse) && !p.LeftMouse) {
 			// place
+			if(!dragging && Tower.gameObject.activeInHierarchy) {
+				Tower.Place();
+				Grid.PlaceTower(Tower);
+
+				Tower = GameObject.Instantiate<Tower>(TowerPrefab);
+			}
+
+			dragging = false;
 		}
+		// mousehold
 		else if(lastInput != null && lastInput.LeftMouse && p.LeftMouse) {
 			// dragging camera
 			var diff = (p.MousePositionScreenSpace - lastInput.MousePositionScreenSpace) * Time.deltaTime * 
 				Mathf.Lerp(0.5f, 1.4f, (main.orthographicSize - minCameraSize) / cameraSizeDiff) * Settings.ScrollSpeed;
 			Vector3 newPosition = main.transform.position - diff;
 			SetCameraPosition(newPosition);
+
+			if(diff.sqrMagnitude > 0.01f) {
+				dragging = true;
+			}
 		}
 
 		if((lastInput == null || !lastInput.RightMouse) && p.RightMouse) {
-			// switch tower type
-
+			HexInfo h = Grid.TryGetCellInfoFromWorldPosition(p.MousePositionWorldSpace, out bool success);
+			if (success) {
+				if (h.TowerHead != null) {
+					lineCreationInProgress = true;
+					Tower.gameObject.SetActive(false);
+					Line = Instantiate(LinePrefab, h.PhysicalCoordinates, Quaternion.identity);
+					Line.gameObject.SetActive(true);
+					Line.Init(Grid, p.MousePositionWorldSpace);
+				}
+			}		
+		}
+		else if(p.RightMouse && lineCreationInProgress) {
+			// Update line with position
+			Line.Update(p.MousePositionWorldSpace);
+		}
+		else if(!p.RightMouse && lineCreationInProgress) {
+			// verify final spot is actually tower head
+			// if so, create line
+			bool success = Line.IsValidPlacement(p.MousePositionWorldSpace);
+			if(success) {
+				Line.Place();
+			}
+			else {
+				Destroy(Line.gameObject);
+			}
+			lineCreationInProgress = false;
+			Tower.gameObject.SetActive(true);
 		}
 
 		lastInput = p;

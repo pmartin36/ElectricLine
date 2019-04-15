@@ -28,9 +28,10 @@ public class HexMetrics {
 	}
 
 	public Vector3 RepresentationalCoordinatesToWorldCoordinates(int x, int y, int z = 0) {
+		var absX = System.Math.Abs(x);
 		return new Vector3(
 			x * OuterRadius * .75f,
-			(y + 0.5f * (x & 1)) * InnerRadius,
+			(y + 0.5f * (absX & 1)) * InnerRadius,
 			z);
 	}
 
@@ -39,7 +40,7 @@ public class HexMetrics {
 	}
 
 	public Vector3Int WorldCoordinatesToRepresentationalCoordinates(Vector3 world) {
-		var repx = Mathf.RoundToInt(world.x / (OuterRadius * .75f));
+		var repx = System.Math.Abs(Mathf.RoundToInt(world.x / (OuterRadius * .75f)));
 		return new Vector3Int(
 			repx,
 			Mathf.RoundToInt((world.y / InnerRadius) - 0.5f * (repx & 1)),

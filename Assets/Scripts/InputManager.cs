@@ -14,7 +14,7 @@ public class InputManager : MonoBehaviour
 	private void Update() {
 		InputPackage p = new InputPackage();
 		p.MousePositionScreenSpace = Input.mousePosition;
-		p.MousePositionWorldSpace = main.ScreenToWorldPoint(Input.mousePosition);
+		p.MousePositionWorldSpace = (Vector2)main.ScreenToWorldPoint(Input.mousePosition);
 
 		p.MouseWheelDelta = Input.mouseScrollDelta.y;
 		p.LeftMouse = Input.GetButton("LeftMouse");

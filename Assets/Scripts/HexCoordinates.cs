@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -23,11 +24,15 @@ public struct HexCoordinates {
 	}
 
 	public static HexCoordinates FromRepresentationalCoordinates(int x, int y) {
-		return new HexCoordinates(x, y - x / 2);
+		return new HexCoordinates(x, y - Mathf.FloorToInt(x / 2f));
 	}
 
 	public static HexCoordinates operator+(HexCoordinates i1, HexCoordinates i2) {
 		return new HexCoordinates(i1.x + i2.x, i1.y + i2.y);
+	}
+
+	public static HexCoordinates operator -(HexCoordinates i1, HexCoordinates i2) {
+		return new HexCoordinates(i1.x - i2.x, i1.y - i2.y);
 	}
 
 	public static bool operator ==(HexCoordinates i1, HexCoordinates i2) {
@@ -50,7 +55,7 @@ public struct HexCoordinates {
 	}
 
 	public Vector3Int GetRepresentationalCoordinates() {
-		return new Vector3Int(x, y + x / 2);
+		return new Vector3Int(x, y + Mathf.FloorToInt(x / 2f));
 	}
 
 	public HexCoordinates Rotate(int degree) {
@@ -91,5 +96,21 @@ public struct HexCoordinates {
 			new HexCoordinates(X + 1, Y),	   // positive y
 			new HexCoordinates(X - 1, Y)	   // negative y
 		};
+	}
+
+	public List<HexCoordinates> GetStraightLinesOfLength(int length) {
+		List<HexCoordinates> r = new List<HexCoordinates>();
+		for(int i = 0; i < length; i++) {
+			int d = i+1;
+			r.AddRange(new HexCoordinates[] {
+				new HexCoordinates(X - d, Y + d), // positive z
+				new HexCoordinates(X + d, Y - d), // negtaive z
+				new HexCoordinates(X,     Y + d), // positive x
+				new HexCoordinates(X,     Y - d), // negative x
+				new HexCoordinates(X + d, Y),	   // positive y
+				new HexCoordinates(X - d, Y)	   // negative y
+			});
+		}
+		return r;
 	}
 }

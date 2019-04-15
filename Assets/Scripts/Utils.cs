@@ -30,6 +30,18 @@ public abstract class Utils {
 	public static float NegativeMod(float a, float b) {
 		return a - b * Mathf.Floor(Mathf.Abs(a / b));
 	}
+
+	public static float AngleDiff(float a, float b) {
+		return 180 - Mathf.Abs(Mathf.Abs(a - b) - 180);
+	}
+
+	public static float Cosh(float d) {
+		return (Mathf.Exp(d) + Mathf.Exp(-d))/2f;
+	}
+
+	public static float Sinh(float d) {
+		return (Mathf.Exp(d) - Mathf.Exp(-d)) / 2f;
+	}
 }
 
 
