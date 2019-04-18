@@ -142,6 +142,7 @@ public class HexGrid : MonoBehaviour
 
 		// Create start/end cells
 		GameObject startCell = Instantiate(startCellPrefabTEMP);
+		startCell.transform.eulerAngles = new Vector3(0,0,180);
 		startCell.transform.position = new Vector3(StartingPoint.PhysicalCoordinates.x, StartingPoint.PhysicalCoordinates.y, -0.5f);
 		StartingPoint.TowerHead = startCell.GetComponent<Tower>();
 
@@ -250,14 +251,14 @@ public class HexGrid : MonoBehaviour
 	private void SetStartEnd() {
 		int xs, ys, xe, ye;
 		xs = UnityEngine.Random.Range(0, width);
-		ys = UnityEngine.Random.Range(height - 3, height-1);
+		ys = UnityEngine.Random.Range(height - 2, height);
 		StartingPoint = new HexInfo(xs, ys, metrics, false, true, true);
 
 		// create point below starting point
 		HexCoordinates h = HexCoordinates.FromRepresentationalCoordinates(xs,ys);
-		h.Y -= 1;
+		h.Y += 1;
 		Vector3Int rep = h.GetRepresentationalCoordinates();
-		HexInfo belowStart = new HexInfo(rep.x, rep.y, metrics, true, true, false);
+		HexInfo aboveStart = new HexInfo(rep.x, rep.y, metrics, true, true, false);
 
 		xe = UnityEngine.Random.Range(0, width);
 		ye = UnityEngine.Random.Range(0, 3);
@@ -265,7 +266,7 @@ public class HexGrid : MonoBehaviour
 
 		cellInfo.Add(StartingPoint.Coordinates, StartingPoint);
 		cellInfo.Add(EndingPoint.Coordinates, EndingPoint);
-		cellInfo.Add(belowStart.Coordinates, belowStart);
+		cellInfo.Add(aboveStart.Coordinates, aboveStart);
 	}
 
 	private void CreateWallBorder() {
