@@ -50,7 +50,7 @@ public class HexGridBasic : MonoBehaviour
 	public HexInfo StartingPoint;
 	protected HexInfo EndingPoint;
 
-	void Awake() {
+	protected virtual void Start() {
 		metrics = new HexMetrics(cellRadius);
 
 		Vector3 phys = metrics.RepresentationalCoordinatesToWorldCoordinates(width, height); ;

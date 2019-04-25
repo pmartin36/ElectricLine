@@ -19,9 +19,16 @@ public class InputManager : MonoBehaviour
 		p.MouseWheelDelta = Input.mouseScrollDelta.y;
 		p.LeftMouse = Input.GetButton("LeftMouse");
 		p.RightMouse = Input.GetButton("RightMouse");
+
+		p.Enter = Input.GetButtonDown("Enter");
+		p.Drop = Input.GetButtonDown("Drop");
+		p.Dash = Input.GetButtonDown("Dash");
+		p.Jump = Input.GetButton("Jump");
+		p.Horizontal = Input.GetAxis("Horizontal");
+		p.Vertical = Input.GetAxis("Vertical");
+
 		GameManager.Instance.ContextManager.HandleInput(p);
 	}
-
 }
 
 public class InputPackage {
@@ -30,4 +37,11 @@ public class InputPackage {
 	public float MouseWheelDelta { get; set; }
 	public bool LeftMouse { get; set; }
 	public bool RightMouse { get; set; }
+
+	public bool Enter { get; set; }
+	public bool Drop { get; set; }
+	public bool Dash { get; set; }
+	public bool Jump { get; set; }
+	public float Horizontal { get; set; }
+	public float Vertical { get; set; }
 }

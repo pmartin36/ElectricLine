@@ -5,10 +5,14 @@ using System.Linq;
 
 public class HexGrid : HexGridBasic
 {
-    private void Start()
+	public static event System.EventHandler<HexGrid> GridGenerated;
+
+	protected override void Start()
     {
+		base.Start();
         GameManager.Instance.LevelManager.Grid = this;
-    }
+		GridGenerated?.Invoke(this, this);
+	}
 
     public void TryGetTowerLocation(Vector3 position, Tower tower)
     {

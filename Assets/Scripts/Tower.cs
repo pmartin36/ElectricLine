@@ -35,7 +35,10 @@ public class Tower : MonoBehaviour
 	private List<GameObject> poles = new List<GameObject>();
 	private SpriteRenderer header;
 
+	public List<Line> Lines;
+
     void Start() {
+		Lines = new List<Line>();
 		header = GetComponentInChildren<SpriteRenderer>();
     }
 

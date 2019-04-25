@@ -27,12 +27,16 @@ public struct HexCoordinates {
 		return new HexCoordinates(x, y - Mathf.FloorToInt(x / 2f));
 	}
 
-	public static HexCoordinates operator+(HexCoordinates i1, HexCoordinates i2) {
+	public static HexCoordinates operator +(HexCoordinates i1, HexCoordinates i2) {
 		return new HexCoordinates(i1.x + i2.x, i1.y + i2.y);
 	}
 
 	public static HexCoordinates operator -(HexCoordinates i1, HexCoordinates i2) {
 		return new HexCoordinates(i1.x - i2.x, i1.y - i2.y);
+	}
+
+	public static HexCoordinates operator -(HexCoordinates i1) {
+		return new HexCoordinates(-i1.x, -i1.y);
 	}
 
 	public static bool operator ==(HexCoordinates i1, HexCoordinates i2) {
@@ -112,5 +116,21 @@ public struct HexCoordinates {
 			});
 		}
 		return r;
+	}
+
+	public override bool Equals(object obj) {
+		if (!(obj is HexCoordinates)) {
+			return false;
+		}
+
+		var coordinates = (HexCoordinates)obj;
+		return X == coordinates.X && Y == coordinates.Y;
+	}
+
+	public override int GetHashCode() {
+		var hashCode = 1861411795;
+		hashCode = hashCode * -1521134295 + X.GetHashCode();
+		hashCode = hashCode * -1521134295 + Y.GetHashCode();
+		return hashCode;
 	}
 }

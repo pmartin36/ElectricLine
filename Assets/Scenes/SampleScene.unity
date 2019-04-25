@@ -142,10 +142,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f5a1e2c115c86c48b91f7c99d76a667, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: {fileID: 0}
+  InPlacementMode: 1
   TowerPrefab: {fileID: 4530048172618260895, guid: 119a1d5bb60021a4ba240d63d137f7d4,
     type: 3}
   LinePrefab: {fileID: 7271139356809661493, guid: 33d1c751cd5020f4d97c616b4de5eb4f,
+    type: 3}
+  playerPrefab: {fileID: 6439591459070571758, guid: b17e665a8963bfb4da43f0660b55807f,
     type: 3}
 --- !u!114 &264916107
 MonoBehaviour:
