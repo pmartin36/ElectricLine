@@ -106,7 +106,7 @@ public class LevelManager : ContextManager
 	}
 
 	public void PlayModeInput(InputPackage p) {
-		// player.HandleInput(p);
+		Player.HandleInput(p);
 	}
 
 	public void PlacementModeInput(InputPackage p) {

@@ -14,6 +14,8 @@ public class LineRider : MonoBehaviour
 	protected float MaxLineSpeed;
 	protected float LineSpeed = 2f;
 
+	protected Vector3 LineVelocity;
+
 	protected virtual void Start() {
 
 	}
@@ -57,8 +59,9 @@ public class LineRider : MonoBehaviour
 
 	protected void LineMovement() {
 		float movement = LineSpeed * Time.fixedDeltaTime;
+		Vector3 diff = Vector3.zero;
 		while (movement > 0) {
-			Vector3 diff = (CurrentLine.Positions[index + direction] - transform.position);
+			diff = (CurrentLine.Positions[index + direction] - transform.position);
 			diff.Scale(new Vector3(1, 1, 0));
 			if (movement >= diff.magnitude) {
 				transform.position += diff;
@@ -74,5 +77,6 @@ public class LineRider : MonoBehaviour
 				movement = 0;
 			}
 		}
+		LineVelocity = diff.normalized * LineSpeed;
 	}
 }
