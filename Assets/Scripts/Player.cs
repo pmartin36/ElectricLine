@@ -8,12 +8,8 @@ public class Player : LineRider, CameraFollowable
 	private Vector3 inputDirection;
 	private SpriteRenderer spriteRenderer;
 
-	public bool ConnectionDisabled { get; set; }
-	Coroutine DisableConnectionForTime;
-
 	// Physics
 	private Controller2D controller;
-	private Vector3 velocity;
 	private float velocityXSmoothing;
 
 	public float MaxJumpHeight = 1.5f;
@@ -22,13 +18,17 @@ public class Player : LineRider, CameraFollowable
 
 	private float gravity;
 	private float maxJumpVelocity, minJumpVelocity;
-	private float moveSpeed = 6f; // static for now
+
+	private float minSpeed = 6f;
+	private float moveSpeed = 6f;
+	private float maxSpeed = 30f;
 
 	// Camera Followable
 	public Vector2 Velocity { get => velocity; }
 	public Vector2 Position { get => transform.position; }
 
 	protected override void Start() {
+		base.Start();
 		Connected = true;
 		controller = GetComponent<Controller2D>();
 		spriteRenderer = GetComponent<SpriteRenderer>();
@@ -37,6 +37,7 @@ public class Player : LineRider, CameraFollowable
 		maxJumpVelocity = Mathf.Abs(gravity) * TimeToJumpApex;
 		minJumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravity) * MinJumpHeight);
 
+		moveSpeed = minSpeed;
 		lastInput = new InputPackage();
 	}
 
@@ -54,10 +55,9 @@ public class Player : LineRider, CameraFollowable
 		inputDirection = new Vector3(p.Horizontal, p.Vertical);
 
 		if(p.Drop) {
-			ConnectionDisabled = true;
+			canConnect = false;
 			if(Connected) {
-				Connected = false;
-				velocity = new Vector3(LineVelocity.x, 0);
+				Disconnect();
 			}
 		}
 
@@ -86,12 +86,13 @@ public class Player : LineRider, CameraFollowable
 		if(Active) {
 			if(Connected) {
 				if(CurrentLine != null) {
-					base.LineMovement();
+					base.LineActions();
 				}
 			}
 			else {
 				CalculateVelocity();
-				controller.Move(velocity * Time.deltaTime, inputDirection);
+				controller.Move(velocity * Time.deltaTime, inputDirection, out Vector2 vdiff);
+				velocity += vdiff / Time.deltaTime;
 				if (controller.collisions.above || controller.collisions.below) {
 					if (controller.collisions.slidingDownMaxSlope) {
 						velocity.y += controller.collisions.slopeNormal.y * -gravity * Time.fixedDeltaTime;
@@ -100,8 +101,25 @@ public class Player : LineRider, CameraFollowable
 						velocity.y = 0;
 					}
 				}
+				base.NonLineActions();
 			}
 		}
+	}
+
+	protected override void Disconnect() {
+		if(CurrentLine != null) {
+			moveSpeed = Mathf.Clamp(LineSpeed, minSpeed, maxSpeed);
+			var d = CurrentLine.Positions[index].Direction;
+			velocity = new Vector2(d.x, d.y) * moveSpeed;
+		}
+		base.Disconnect();	
+		StartCoroutine(DisableConnectionForTime());
+	}
+
+	protected override void Connect(RaycastHit2D hit) {
+		base.Connect(hit);
+		var d = CurrentLine.Positions[index].Direction;
+		LineSpeed = new Vector2(velocity.x * d.x, velocity.y * d.y).magnitude / 2f;
 	}
 
 	public void OnJumpInputDown() {
@@ -171,5 +189,11 @@ public class Player : LineRider, CameraFollowable
 		float targetVelocityX = inputDirection.x * moveSpeed;
 		velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocityX, ref velocityXSmoothing, (controller.collisions.below) ? .1f : .2f);
 		velocity.y += gravity * Time.deltaTime;
+	}
+
+	protected IEnumerator DisableConnectionForTime() {
+		canConnect = false;
+		yield return new WaitForSeconds(0.5f);
+		canConnect = !lastInput.Drop;
 	}
 }

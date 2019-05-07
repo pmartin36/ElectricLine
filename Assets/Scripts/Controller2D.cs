@@ -15,11 +15,11 @@ public class Controller2D : RaycastController {
 
 	}
 
-	public void Move(Vector2 moveAmount, bool standingOnPlatform) {
-		Move(moveAmount, Vector2.zero, standingOnPlatform);
+	public void Move(Vector2 moveAmount, out Vector2 vDiff, bool standingOnPlatform) {
+		Move(moveAmount, Vector2.zero, out vDiff, standingOnPlatform);
 	}
 
-	public void Move(Vector2 moveAmount, Vector2 input, bool standingOnPlatform = false) {
+	public void Move(Vector2 moveAmount, Vector2 input, out Vector2 vDiff, bool standingOnPlatform = false) {
 		UpdateRaycastOrigins();
 
 		collisions.Reset();
@@ -44,6 +44,13 @@ public class Controller2D : RaycastController {
 		if (standingOnPlatform) {
 			collisions.below = true;
 		}
+
+		float vDiffx = 0;
+		float vDiffy = collisions.climbingSlopeOld && !collisions.climbingSlope
+			? Mathf.Abs(collisions.moveAmountOld.x) * Mathf.Cos(collisions.slopeAngleOld * Mathf.Deg2Rad)
+			: 0;
+
+		vDiff = new Vector2(vDiffx, vDiffy);
 	}
 
 	void HorizontalCollisions(ref Vector2 moveAmount) {
@@ -225,6 +232,7 @@ public class Controller2D : RaycastController {
 		public bool above, below;
 		public bool left, right;
 
+		public bool climbingSlopeOld;
 		public bool climbingSlope;
 		public bool descendingSlope;
 		public bool slidingDownMaxSlope;
@@ -238,10 +246,12 @@ public class Controller2D : RaycastController {
 		public void Reset() {
 			above = below = false;
 			left = right = false;
-			climbingSlope = false;
 			descendingSlope = false;
 			slidingDownMaxSlope = false;
 			slopeNormal = Vector2.zero;
+
+			climbingSlopeOld = climbingSlope;
+			climbingSlope = false;
 
 			slopeAngleOld = slopeAngle;
 			slopeAngle = 0;

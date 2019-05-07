@@ -10,6 +10,9 @@ public class Line : MonoBehaviour
 	private HexGrid Grid;
 	public float StepSize = 0.25f;
 	private LineRenderer line;
+	private PolygonCollider2D polyCollider;
+
+	public float LineWidth;
 
 	public HexInfo SourceHex { get; private set; }
 	public HexInfo DestHex { get; private set; }
@@ -17,10 +20,14 @@ public class Line : MonoBehaviour
 		get => SourceHex.Coordinates - DestHex.Coordinates;
 	}
 
-	public List<Vector3> Positions;
+	public List<LinePosition> Positions { get; set; }
 
     void Awake() {
 		line = GetComponent<LineRenderer>();
+		line.startWidth = LineWidth;
+		line.endWidth = LineWidth;
+
+		polyCollider = GetComponent<PolygonCollider2D>();
     }
 
     void Update() {
@@ -52,7 +59,7 @@ public class Line : MonoBehaviour
 				v2 = transform.position;
 				direction = Mathf.Sign(transform.position.x - position.x);
 			}
-			Positions = new List<Vector3>() { new Vector3(v1.x, v1.y, -1) };
+			Positions = new List<LinePosition>() { new LinePosition(new Vector3(v1.x, v1.y, -1)) };
 
 			float d = Mathf.Abs(dist.x);
 			float h = Mathf.Abs(dist.y);
@@ -69,24 +76,45 @@ public class Line : MonoBehaviour
 				
 				for(float i = StepSize; i < d; i+= StepSize) {
 					float y = a * Utils.Cosh((i + x1) / a) - diffY;
-					Positions.Add(new Vector3(
+					Positions.Add(new LinePosition(new Vector3(
 						v1.x + i * direction,
 						y,
-						-1));
+						-1)));
 				}
 			}
-			Positions.Add(new Vector3(v2.x, v2.y, -1));		
+			Positions.Add(new LinePosition(new Vector3(v2.x, v2.y, -1)));		
 		}
 		else {
-			Positions = new List<Vector3>() {
-				new Vector3(transform.position.x, transform.position.y, -1),
-				new Vector3(position.x, position.y, -1)
+			Positions = new List<LinePosition>() {
+				new LinePosition(new Vector3(transform.position.x, transform.position.y, -1)),
+				new LinePosition(new Vector3(position.x, position.y, -1))
 			};
 		}
+
+		Vector2[] ppoints = new Vector2[Positions.Count * 2];
+		Vector3[] positions = new Vector3[Positions.Count];
+		ppoints[0] = Vector2.zero;
 		line.positionCount = Positions.Count;
+
+		int length = ppoints.Length;
+		Vector3 dir = Vector3.zero;
+		Vector3 normal = Vector3.zero;
 		for (int i = 0; i < Positions.Count; i++) {
-			line.SetPositions(Positions.ToArray());
+			var pos = Positions[i];
+			if(i != Positions.Count - 1 ) {
+				dir = (pos.Position - Positions[i + 1].Position).normalized;
+				normal = Quaternion.AngleAxis(90, Vector3.back) * dir;
+			}
+			var offset = normal * LineWidth / 4f;
+			ppoints[i] = pos.Position + offset - transform.position;
+			ppoints[length - i - 1] = pos.Position - offset - transform.position;
+			positions[i] = Positions[i].Position;
+
+			pos.Direction = dir;
+			pos.Normal = normal;
 		}
+		polyCollider.points = ppoints;
+		line.SetPositions(positions);
 	}
 
 	public float TryApproximateAlpha(float length, float xDist, float yDist, out bool success) {
@@ -143,7 +171,7 @@ public class Line : MonoBehaviour
 
 	public ValueTuple<int, int> GetNearestIndexAndDirection(Vector3 pos, bool edgeIndex, Vector3? velocity = null) {
 		if(edgeIndex) {
-			return (Positions[0] - pos).sqrMagnitude < (Positions[Positions.Count-1] - pos).sqrMagnitude 
+			return (Positions[0].Position - pos).sqrMagnitude < (Positions[Positions.Count-1].Position - pos).sqrMagnitude 
 				? new ValueTuple<int, int>(0, 1)
 				: new ValueTuple<int, int>(Positions.Count-1, -1);
 		}
@@ -151,7 +179,7 @@ public class Line : MonoBehaviour
 			float closestDist = Mathf.Infinity;
 			int closest = 0;
 			for(int i = 0; i < Positions.Count; i++) {
-				float sqrMag = (Positions[i] - pos).sqrMagnitude;
+				float sqrMag = (Positions[i].Position - pos).sqrMagnitude;
 				if(sqrMag < closestDist) {
 					closestDist = sqrMag;
 					closest = i;
@@ -167,9 +195,8 @@ public class Line : MonoBehaviour
 			else {
 				Vector3 v = velocity ?? Vector3.zero;
 				v.Scale(new Vector3(2,1,1)); // make velocity in the x direction weigh double
-				//Vector3 nextPosition = Positions[closest] + v;
-				Vector3 nextIndexPosition = Positions[closest + 1] - Positions[closest];
-				Vector3 previousIndexPosition = Positions[closest - 1] - Positions[closest];
+				Vector3 nextIndexPosition = Positions[closest + 1].Position - Positions[closest].Position;
+				Vector3 previousIndexPosition = Positions[closest - 1].Position - Positions[closest].Position;
 
 				if(Vector2.Dot(v, nextIndexPosition) > Vector2.Dot(v, previousIndexPosition)) {
 					return new ValueTuple<int, int>(closest + 1, 1);
@@ -185,5 +212,21 @@ public class Line : MonoBehaviour
 		var distToSource = (position - SourceHex.PhysicalCoordinates).sqrMagnitude;
 		var distToDest = (position - DestHex.PhysicalCoordinates).sqrMagnitude;
 		return distToSource < distToDest ? SourceHex.TowerHead : DestHex.TowerHead;
+	}
+}
+
+public class LinePosition {
+	public Vector3 Position { get; set; }
+	public Vector3 Normal { get; set; }
+	public Vector3 Direction { get; set; }
+
+	public LinePosition(Vector3 p, Vector3 n) {
+		Position = p;
+		Normal = n;
+	}
+
+	public LinePosition(Vector3 position) {
+		Position = position;
+		Normal = Vector2.zero;
 	}
 }

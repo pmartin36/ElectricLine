@@ -85,6 +85,7 @@ public class LevelManager : ContextManager
 
 	private void LeavePlacementMode() {
 		InPlacementMode = false;
+		GameObject.Destroy(Tower.gameObject);
 		PlacementModeChange?.Invoke(this, InPlacementMode);
 		Player.SetActive(Grid.StartingPoint.TowerHead);
 	}
