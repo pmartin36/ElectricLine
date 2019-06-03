@@ -12,9 +12,10 @@ public class LevelManager : ContextManager
 		get => _hexGrid;
 		set {
 			_hexGrid = value;
-			SetCameraPosition(Grid.StartingPoint.PhysicalCoordinates);
 		}
 	}
+
+	public LevelData LevelData;
 
 	public bool InPlacementMode = true;
 	public event EventHandler<bool> PlacementModeChange;
@@ -45,6 +46,16 @@ public class LevelManager : ContextManager
 		base.Awake();
 		main = Camera.main;
 		HexGrid.GridGenerated += GridGenerated;
+
+		Grid = GameObject.FindObjectOfType<HexGrid>();
+		if(LevelData != null) {
+			Grid.Init(LevelData, TowerPrefab, LinePrefab);
+		}
+		else {
+			Grid.Init();
+		}
+		
+		SetCameraPosition(Grid.StartingPoint.PhysicalCoordinates);
 	}
 
 	public override void Start()
@@ -121,6 +132,9 @@ public class LevelManager : ContextManager
 			SetCameraPosition(main.transform.position + (p.MousePositionWorldSpace - pointerPositionAfterCamResize));
 		}
 
+		Vector2 vpSpace = main.WorldToViewportPoint(p.MousePositionWorldSpace);
+		bool mouseOnScreen = vpSpace.x < 1 && vpSpace.x >= 0 && vpSpace.y < 1 && vpSpace.y >= 0;
+
 		if (!lineCreationInProgress) {
 			Grid.TryGetTowerLocation(p.MousePositionWorldSpace, Tower);
 		}
@@ -128,7 +142,7 @@ public class LevelManager : ContextManager
 		// mouseup
 		if ((lastInput != null && lastInput.LeftMouse) && !p.LeftMouse) {
 			// place
-			if (!dragging && Tower.gameObject.activeInHierarchy) {
+			if (!dragging && mouseOnScreen && Tower.gameObject.activeInHierarchy) {
 				Tower.Place();
 				Grid.PlaceTower(Tower);
 

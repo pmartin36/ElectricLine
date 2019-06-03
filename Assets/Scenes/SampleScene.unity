@@ -142,6 +142,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f5a1e2c115c86c48b91f7c99d76a667, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  LevelData: {fileID: 11400000, guid: 42a341cadada47443a518aba96c6edff, type: 2}
   InPlacementMode: 1
   TowerPrefab: {fileID: 4530048172618260895, guid: 119a1d5bb60021a4ba240d63d137f7d4,
     type: 3}

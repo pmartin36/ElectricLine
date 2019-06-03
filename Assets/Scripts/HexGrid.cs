@@ -7,14 +7,28 @@ public class HexGrid : HexGridBasic
 {
 	public static event System.EventHandler<HexGrid> GridGenerated;
 
-	protected override void Start()
-    {
-		base.Start();
-        GameManager.Instance.LevelManager.Grid = this;
+	public void Init(LevelData data = null, Tower towerPrefab = null, Line linePrefab = null) {
+		if(data) {
+			InitGrid(data?.Seed);
+			//towers
+			foreach(TowerData td in data.Towers) {
+				Tower t = Instantiate(towerPrefab);
+				t.CreateFromData(td, this);
+			}
+			//lines
+			foreach(LineData ld in data.Lines) {
+				Line l = Instantiate(linePrefab);
+				l.CreateFromData(ld, this);
+			}
+		}
+		else {
+			InitGrid(null);
+		}
+
 		GridGenerated?.Invoke(this, this);
 	}
 
-    public void TryGetTowerLocation(Vector3 position, Tower tower)
+	public void TryGetTowerLocation(Vector3 position, Tower tower)
     {
         HexCoordinates hex = TryGetHexCoordinateFromWorldPosition(position, out bool success);
         if (success)

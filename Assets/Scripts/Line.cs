@@ -19,6 +19,9 @@ public class Line : MonoBehaviour
 	public HexCoordinates Direction {
 		get => SourceHex.Coordinates - DestHex.Coordinates;
 	}
+	public Vector2 PhysicalCoordinatesDirection {
+		get => Grid.RepresentationalCoordinatesToPhysicalCoordinates(Direction.GetRepresentationalCoordinates());
+	}
 
 	public List<LinePosition> Positions { get; set; }
 
@@ -39,6 +42,13 @@ public class Line : MonoBehaviour
 		HexInfo h = Grid.TryGetCellInfoFromWorldPosition(mousePosition, out bool success); // don't need to check success, it's already done in the calling method
 	
 		SourceHex = h;
+	}
+
+	public void CreateFromData(LineData ld, HexGrid grid) {
+		Grid = grid;
+		SourceHex = grid[ld.SourceHex];
+		transform.position = SourceHex.PhysicalCoordinates;
+		Place(grid[ld.DestHex]);
 	}
 
 	public void Update(Vector3 position) {
@@ -186,25 +196,45 @@ public class Line : MonoBehaviour
 				}
 			}
 
-			if(closest == 0) {
-				return new ValueTuple<int, int>(0, 1);
+			Vector3 v = velocity ?? Vector3.zero;
+			v.Scale(new Vector3(2, 1, 1)); // make velocity in the x direction weigh double
+
+			int nextIndex = 0;
+			int previousIndex = 0;
+			if (closest == 0) {
+				previousIndex = 0;
+				nextIndex = 1;
 			}
 			else if (closest == Positions.Count - 1) {
-				return new ValueTuple<int, int>(Positions.Count-1, -1);
+				previousIndex = Positions.Count - 1;
+				nextIndex = Positions.Count - 2;
 			}
-			else {
-				Vector3 v = velocity ?? Vector3.zero;
-				v.Scale(new Vector3(2,1,1)); // make velocity in the x direction weigh double
-				Vector3 nextIndexPosition = Positions[closest + 1].Position - Positions[closest].Position;
-				Vector3 previousIndexPosition = Positions[closest - 1].Position - Positions[closest].Position;
+			else {	
+				nextIndex = closest + 1;
+				previousIndex = closest - 1;
+			}
 
-				if(Vector2.Dot(v, nextIndexPosition) > Vector2.Dot(v, previousIndexPosition)) {
-					return new ValueTuple<int, int>(closest + 1, 1);
+			Vector3 nextIndexPosition = Positions[nextIndex].Position - Positions[closest].Position;
+			Vector3 previousIndexPosition = Positions[previousIndex].Position - Positions[closest].Position;
+
+			if(Vector2.Dot(v, nextIndexPosition) > Vector2.Dot(v, previousIndexPosition)) {			
+				if (Positions.Count == 2) {
+					// if we're closer to next index, get the other point so that we can continue towards next index
+					return new ValueTuple<int, int>(previousIndex, nextIndex - closest);
 				}
 				else {
-					return new ValueTuple<int, int>(closest - 1, -1);
+					return new ValueTuple<int, int>(closest, nextIndex - closest);
 				}
-			}		
+			}
+			else {
+				if (Positions.Count == 2) {
+					return new ValueTuple<int, int>(nextIndex, closest - nextIndex);
+				}
+				else {
+					return new ValueTuple<int, int>(closest, closest - nextIndex);
+				}
+			}
+					
 		}
 	}
 

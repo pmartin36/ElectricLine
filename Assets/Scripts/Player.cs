@@ -23,13 +23,15 @@ public class Player : LineRider, CameraFollowable
 	private float moveSpeed = 6f;
 	private float maxSpeed = 30f;
 
+	private Line disabledLine;
+
 	// Camera Followable
 	public Vector2 Velocity { get => velocity; }
 	public Vector2 Position { get => transform.position; }
 
 	protected override void Start() {
 		base.Start();
-		Connected = true;
+		IsConnected = true;
 		controller = GetComponent<Controller2D>();
 		spriteRenderer = GetComponent<SpriteRenderer>();
 
@@ -55,10 +57,11 @@ public class Player : LineRider, CameraFollowable
 		inputDirection = new Vector3(p.Horizontal, p.Vertical);
 
 		if(p.Drop) {
-			canConnect = false;
-			if(Connected) {
-				Disconnect();
+			if (ConnectedLine != null) {
+				moveSpeed = Mathf.Clamp(LineSpeed, minSpeed, maxSpeed);
+				velocity = new Vector2(moveSpeed * Mathf.Sign(LineVelocity.x), -0.2f);		
 			}
+			Disconnect();
 		}
 
 		if (p.Jump && !lastInput.Jump) {
@@ -72,10 +75,16 @@ public class Player : LineRider, CameraFollowable
 	}
 
 	public override void SelectLine(Tower t) {
-		if (t.Lines.Count > 1 && inputDirection.sqrMagnitude > 0.1f) {
+		if (t.Lines.Count > 2 && inputDirection.sqrMagnitude > 0.1f) {
 			// select the line that the player is pointing in the direction of
-
-			SetIndexAndDirection();
+			foreach(Line l in t.Lines) {
+				if(l != ConnectedLine && Mathf.Abs(Vector2.Dot(inputDirection, l.PhysicalCoordinatesDirection)) > 0.75f) {
+					ConnectedLine = l;
+					SetIndexAndDirection();
+					return;
+				}
+			}
+			base.SelectLine(t);
 		}
 		else {
 			base.SelectLine(t);
@@ -84,8 +93,8 @@ public class Player : LineRider, CameraFollowable
 
 	public override void FixedUpdate() {
 		if(Active) {
-			if(Connected) {
-				if(CurrentLine != null) {
+			if(IsConnected) {
+				if(ConnectedLine != null) {
 					base.LineActions();
 				}
 			}
@@ -107,19 +116,18 @@ public class Player : LineRider, CameraFollowable
 	}
 
 	protected override void Disconnect() {
-		if(CurrentLine != null) {
-			moveSpeed = Mathf.Clamp(LineSpeed, minSpeed, maxSpeed);
-			var d = CurrentLine.Positions[index].Direction;
-			velocity = new Vector2(d.x, d.y) * moveSpeed;
-		}
-		base.Disconnect();	
+		disabledLine = ConnectedLine;
 		StartCoroutine(DisableConnectionForTime());
+
+		base.Disconnect();			
 	}
 
 	protected override void Connect(RaycastHit2D hit) {
-		base.Connect(hit);
-		var d = CurrentLine.Positions[index].Direction;
-		LineSpeed = new Vector2(velocity.x * d.x, velocity.y * d.y).magnitude / 2f;
+		if(!lastInput.Drop && hit.collider.gameObject != disabledLine?.gameObject) {
+			base.Connect(hit);
+			var d = ConnectedLine.Positions[index].Direction;
+			LineSpeed = Mathf.Clamp(new Vector2(velocity.x * d.x, velocity.y * d.y).magnitude, minSpeed, maxSpeed);
+		}
 	}
 
 	public void OnJumpInputDown() {
@@ -137,7 +145,13 @@ public class Player : LineRider, CameraFollowable
 		//		velocity.y = wallLeap.y;
 		//	}
 		//}
-		if (controller.collisions.below) {
+		
+		if(IsConnected) {
+			Disconnect();
+			velocity.y = LineVelocity.y + maxJumpVelocity;
+			velocity.x = LineVelocity.x;
+		}
+		else if(controller.collisions.below) {
 			if (controller.collisions.slidingDownMaxSlope) {
 				if (inputDirection.x != -Mathf.Sign(controller.collisions.slopeNormal.x)) { // not jumping against max slope
 					velocity.y = maxJumpVelocity * controller.collisions.slopeNormal.y;
@@ -154,6 +168,17 @@ public class Player : LineRider, CameraFollowable
 		if (velocity.y > minJumpVelocity) {
 			velocity.y = minJumpVelocity;
 		}
+	}
+
+	void CalculateVelocity() {
+		float targetVelocityX = inputDirection.x * moveSpeed;
+		velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocityX, ref velocityXSmoothing, (controller.collisions.below) ? .1f : .2f);
+		velocity.y += gravity * Time.deltaTime;
+	}
+
+	protected IEnumerator DisableConnectionForTime() {
+		yield return new WaitForSeconds(0.5f);
+		disabledLine = null;
 	}
 
 	//void HandleWallSliding() {
@@ -184,16 +209,4 @@ public class Player : LineRider, CameraFollowable
 	//	}
 
 	//}
-
-	void CalculateVelocity() {
-		float targetVelocityX = inputDirection.x * moveSpeed;
-		velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocityX, ref velocityXSmoothing, (controller.collisions.below) ? .1f : .2f);
-		velocity.y += gravity * Time.deltaTime;
-	}
-
-	protected IEnumerator DisableConnectionForTime() {
-		canConnect = false;
-		yield return new WaitForSeconds(0.5f);
-		canConnect = !lastInput.Drop;
-	}
 }

@@ -11,6 +11,8 @@ public class HexInfoBasic {
 	public bool Locked { get; protected set; } // whatever this point is assigned to originally cannot be replaced
 
 	public Vector3 PhysicalCoordinates;
+
+	[InspectorReadOnly]
 	public HexCoordinates Coordinates;
 
 	public int NumTouchedWalls { get; set; }

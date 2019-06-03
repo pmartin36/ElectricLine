@@ -5,8 +5,8 @@ using UnityEngine;
 public class LineRider : MonoBehaviour
 {
 	public bool Active { get; set; }
-    public bool Connected { get; set; }
-	public Line CurrentLine { get; private set; }
+    public bool IsConnected { get; set; }
+	public Line ConnectedLine { get; protected set; }
 
 	protected int index;
 	protected int direction;
@@ -22,6 +22,7 @@ public class LineRider : MonoBehaviour
 
 	protected virtual void Start() {
 		LinesLayerMask = 1 << LayerMask.NameToLayer("Lines");
+		canConnect = true;
 	}
 
 	public virtual void SelectLine(Tower t) {	
@@ -29,30 +30,30 @@ public class LineRider : MonoBehaviour
 			return;
 		}
 		else if(t.Lines.Count == 1) {
-			CurrentLine = t.Lines[0];
+			ConnectedLine = t.Lines[0];
 		}
 		else {
 			// select a new line
-			int i = (t.Lines.IndexOf(CurrentLine) + 1) % t.Lines.Count;
-			CurrentLine = t.Lines[i];
+			int i = (t.Lines.IndexOf(ConnectedLine) + 1) % t.Lines.Count;
+			ConnectedLine = t.Lines[i];
 		}
 		SetIndexAndDirection();
 	}
 
 	public void SetIndexAndDirection() {
-		if(Connected) {
+		if(IsConnected) {
 			// turn around on line
-			(index, direction) = CurrentLine.GetNearestIndexAndDirection(transform.position, true);
+			(index, direction) = ConnectedLine.GetNearestIndexAndDirection(transform.position, true);
 		}
 		else {
 			// go same direction as current velocity
-			(index, direction) = CurrentLine.GetNearestIndexAndDirection(transform.position, false, velocity);
+			(index, direction) = ConnectedLine.GetNearestIndexAndDirection(transform.position, false, velocity);
 		}
 	}
 
 	public virtual void FixedUpdate() {
-		if(Connected) {
-			if(CurrentLine != null) {
+		if(IsConnected) {
+			if(ConnectedLine != null) {
 				LineActions();
 			}
 		}
@@ -74,20 +75,20 @@ public class LineRider : MonoBehaviour
 		float movement = LineSpeed * Time.fixedDeltaTime;
 
 		// get towards center of line
-		var next = CurrentLine.Positions[index + direction];
+		var next = ConnectedLine.Positions[index + direction];
 		Vector3 diff = (next.Position - transform.position);
 		var p = Vector3.Project(diff, next.Normal);	
 		transform.position += Time.fixedDeltaTime * p * 5f;
 
 		while (movement > 0) {
-			diff = (CurrentLine.Positions[index + direction].Position - transform.position);
+			diff = (ConnectedLine.Positions[index + direction].Position - transform.position);
 			diff.Scale(new Vector3(1, 1, 0));
 			if (movement >= diff.magnitude) {
 				transform.position += diff;
 				movement -= diff.magnitude;
 				index += direction;
-				if (index == 0 || index == CurrentLine.Positions.Count - 1) {
-					Tower tower = CurrentLine.GetClosestTower(transform.position);
+				if (index == 0 || index == ConnectedLine.Positions.Count - 1) {
+					Tower tower = ConnectedLine.GetClosestTower(transform.position);
 					SelectLine(tower);
 				}
 			}
@@ -101,13 +102,14 @@ public class LineRider : MonoBehaviour
 	}
 
 	protected virtual void Connect(RaycastHit2D hit) {
-		CurrentLine = hit.collider.GetComponent<Line>();
+		ConnectedLine = hit.collider.GetComponent<Line>();
 		transform.position = hit.centroid;
 		SetIndexAndDirection();		
-		Connected = true;	
+		IsConnected = true;	
 	}
 
 	protected virtual void Disconnect() {
-		Connected = false;
+		IsConnected = false;
+		ConnectedLine = null;
 	}
 }

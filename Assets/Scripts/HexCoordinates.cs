@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public struct HexCoordinates {
+public class HexCoordinates {
 	[SerializeField]
-	private int x, y;
+	protected int x;
+	[SerializeField]
+	protected int y;
 	public int X { get => x; set => x = value; }
 	public int Y { get => y; set => y = value; }
 	public int Z { get => -X - Y; }

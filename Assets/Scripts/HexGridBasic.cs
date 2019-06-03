@@ -35,6 +35,10 @@ public class HexGridBasic : MonoBehaviour
 		}
 	}
 
+	public HexInfo this[HexCoordinates h] {
+		get => cellInfo[h];
+	}
+	
 	public float HexSideLength { get =>  Mathf.Sin(30*Mathf.Deg2Rad) * metrics.OuterRadius * 2; }
 	public float OuterRadius { get => metrics.OuterRadius; }
 	public float InnerRadius { get => metrics.InnerRadius; }
@@ -51,6 +55,13 @@ public class HexGridBasic : MonoBehaviour
 	protected HexInfo EndingPoint;
 
 	protected virtual void Start() {
+		
+	}
+
+	public void InitGrid(int? seed = null) {
+		int s = seed != null && seed.HasValue ? seed.Value : System.Environment.TickCount;
+		UnityEngine.Random.InitState(s);
+
 		metrics = new HexMetrics(cellRadius);
 
 		Vector3 phys = metrics.RepresentationalCoordinatesToWorldCoordinates(width, height); ;
@@ -69,7 +80,7 @@ public class HexGridBasic : MonoBehaviour
 		GenerateGrid();
 	}
 
-	private void GenerateGrid() {
+	protected void GenerateGrid() {	
 		SetStartEnd();
 		CreateWallBorder();
 		var activeList = new List<HexCoordinates>() { StartingPoint.Coordinates };
@@ -361,5 +372,9 @@ public class HexGridBasic : MonoBehaviour
 				yield return null;
 			}
 		}
+	}
+
+	public Vector3 RepresentationalCoordinatesToPhysicalCoordinates(Vector3Int h) {
+		return metrics.RepresentationalCoordinatesToWorldCoordinates(h.x, h.y);
 	}
 }
