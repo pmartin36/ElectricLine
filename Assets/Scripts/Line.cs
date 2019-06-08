@@ -217,22 +217,11 @@ public class Line : MonoBehaviour
 			Vector3 nextIndexPosition = Positions[nextIndex].Position - Positions[closest].Position;
 			Vector3 previousIndexPosition = Positions[previousIndex].Position - Positions[closest].Position;
 
-			if(Vector2.Dot(v, nextIndexPosition) > Vector2.Dot(v, previousIndexPosition)) {			
-				if (Positions.Count == 2) {
-					// if we're closer to next index, get the other point so that we can continue towards next index
-					return new ValueTuple<int, int>(previousIndex, nextIndex - closest);
-				}
-				else {
-					return new ValueTuple<int, int>(closest, nextIndex - closest);
-				}
+			if(Vector2.Dot(v, nextIndexPosition) > Vector2.Dot(v, previousIndexPosition)) {
+				return new ValueTuple<int, int>(previousIndex, nextIndex - closest);
 			}
 			else {
-				if (Positions.Count == 2) {
-					return new ValueTuple<int, int>(nextIndex, closest - nextIndex);
-				}
-				else {
-					return new ValueTuple<int, int>(closest, closest - nextIndex);
-				}
+				return new ValueTuple<int, int>(nextIndex, closest - nextIndex);
 			}
 					
 		}

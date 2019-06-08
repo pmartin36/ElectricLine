@@ -151,10 +151,12 @@ public class HexGridBasic : MonoBehaviour
 		GameObject startCell = Instantiate(startCellPrefabTEMP);
 		startCell.transform.eulerAngles = new Vector3(0,0,180);
 		startCell.transform.position = new Vector3(StartingPoint.PhysicalCoordinates.x, StartingPoint.PhysicalCoordinates.y, -0.5f);
+		startCell.transform.localScale = Vector3.one * metrics.OuterRadius / 2f;
 		StartingPoint.TowerHead = startCell.GetComponent<Tower>();
 
 		GameObject endCell = Instantiate(finishCellPrefabTEMP);
 		endCell.transform.position = new Vector3(EndingPoint.PhysicalCoordinates.x, EndingPoint.PhysicalCoordinates.y, -0.5f);
+		endCell.transform.localScale = Vector3.one * metrics.OuterRadius / 2f;
 		EndingPoint.TowerHead = endCell.GetComponent<Tower>();
 
 		// fill in unreachable points --- TEMPORARY
@@ -185,6 +187,7 @@ public class HexGridBasic : MonoBehaviour
 				HexCell cell = Instantiate<HexCell>(cellPrefab);
 				cell.transform.SetParent(transform, false);
 				cell.transform.localPosition = h.PhysicalCoordinates;
+				cell.transform.localScale = Vector3.one * cellRadius;
 				cell.coords = h.Coordinates;
 				if (h.Locked) {
 					cell.color = new Color(x, y, 1, h.Filled ? 1 : 0.5f);
@@ -204,6 +207,7 @@ public class HexGridBasic : MonoBehaviour
 				}
 				c.transform.SetParent(transform, false);
 				c.transform.localPosition = new Vector3(h.PhysicalCoordinates.x, h.PhysicalCoordinates.y, 0.5f);
+				c.transform.localScale = Vector3.one * cellRadius;
 			}
 		}
 	}

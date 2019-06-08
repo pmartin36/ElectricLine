@@ -21,7 +21,7 @@ public class InputManager : MonoBehaviour
 		p.RightMouse = Input.GetButton("RightMouse");
 
 		p.Enter = Input.GetButtonDown("Enter");
-		p.Drop = Input.GetButtonDown("Drop");
+		p.Drop = Input.GetButton("Drop");
 		p.Dash = Input.GetButtonDown("Dash");
 		p.Jump = Input.GetButton("Jump");
 		p.Horizontal = Input.GetAxis("Horizontal");

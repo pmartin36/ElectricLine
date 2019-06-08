@@ -61,6 +61,7 @@ public class LevelManager : ContextManager
 	public override void Start()
     {
 		Tower = GameObject.Instantiate<Tower>(TowerPrefab);
+		Tower.transform.localScale = Vector3.one * Grid.OuterRadius * Tower.transform.localScale.x / 2f;
     }
 
 	public void GridGenerated(object sender, HexGrid grid) {
@@ -147,6 +148,7 @@ public class LevelManager : ContextManager
 				Grid.PlaceTower(Tower);
 
 				Tower = GameObject.Instantiate<Tower>(TowerPrefab);
+				Tower.transform.localScale = Vector3.one * Grid.OuterRadius * Tower.transform.localScale.x / 2f;
 			}
 
 			dragging = false;

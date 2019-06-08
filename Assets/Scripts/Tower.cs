@@ -68,6 +68,7 @@ public class Tower : MonoBehaviour
 		Vector3 dir = Utils.AngleToVector(td.Rotation + 90);
 		float h = 0.5f - td.Height;
 		transform.position = grid[GridPosition].PhysicalCoordinates + dir * h * grid.InnerRadius + Vector3.back * 0.5f;
+		transform.localScale = Vector3.one * grid.OuterRadius * transform.localScale.x / 2f;
 
 		Height = td.Height;
 		Place();
