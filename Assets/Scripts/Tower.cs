@@ -30,6 +30,14 @@ public class Tower : MonoBehaviour
 		}
 	}
 
+	public static Tower towerPrefab;
+	public static Tower CreateInstance() {
+		towerPrefab = Resources.Load<Tower>("Prefabs/Tower");
+		return Instantiate(towerPrefab);
+	}
+
+	public Vector2 PhysicalHeadPosition { get; protected set; }
+
 	public HexCoordinates GridPosition;
 
 	public GameObject PolePrefab;
@@ -51,14 +59,17 @@ public class Tower : MonoBehaviour
 		return new Vector3(0, i * 2f, 0);
 	}
 
-	public void Place() {
+	public virtual void Place(HexGrid grid) {
 		header.color = Color.white;
 		for(int i = 0; i < Height - 1; i++) {
 			poles[i].GetComponent<SpriteRenderer>().color = Color.white;
 		}
+		PhysicalHeadPosition = grid[GridPosition].PhysicalCoordinates;
+
+		grid.PlaceTower(this);
 	}
 
-	public void CreateFromData(TowerData td, HexGrid grid) {
+	public virtual void CreateFromData(TowerData td, HexGrid grid) {
 		GridPosition = td.GridPosition;	
 		
 		transform.eulerAngles = new Vector3(0,0,td.Rotation);
@@ -71,7 +82,8 @@ public class Tower : MonoBehaviour
 		transform.localScale = Vector3.one * grid.OuterRadius * transform.localScale.x / 2f;
 
 		Height = td.Height;
-		Place();
-		grid.PlaceTower(this);
+		Place(grid);
 	}
+
+	public virtual void Touched() { }
 }

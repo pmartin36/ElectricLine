@@ -45,7 +45,7 @@ public class HexGridBasic : MonoBehaviour
 
 	public GameObject startCellPrefabTEMP;
 	public GameObject finishCellPrefabTEMP;
-	public GameObject emptyCellPrefabTEMP;
+	public EmptyCell emptyCellPrefab;
 	public HexCell cellPrefab;
 
 	protected HexMetrics metrics;
@@ -159,7 +159,7 @@ public class HexGridBasic : MonoBehaviour
 		endCell.transform.localScale = Vector3.one * metrics.OuterRadius / 2f;
 		EndingPoint.TowerHead = endCell.GetComponent<Tower>();
 
-		// fill in unreachable points --- TEMPORARY
+		// fill in unreachable points
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
 				var hexCoords = HexCoordinates.FromRepresentationalCoordinates(x, y);
@@ -170,17 +170,11 @@ public class HexGridBasic : MonoBehaviour
 			}
 		}
 
-		// Actually create cells
-		foreach (HexInfo h in cellInfo.Values) {
-			//if (h.Filled) {
-			//	HexCell cell = Instantiate<HexCell>(cellPrefab);
-			//	cell.transform.SetParent(transform, false);
-			//	cell.transform.localPosition = h.PhysicalCoordinates;
-			//	cell.color = new Color((float)h.PhysicalCoordinates.x / (width * cellRadius), (float)h.PhysicalCoordinates.y / (height * cellRadius), 0, 1);
-			//	cell.coords = h.Coordinates;
-			//	h.Cell = cell;
-			//}
+		CreateCellsFromCellInfo();
+	}
 
+	protected virtual void CreateCellsFromCellInfo() {
+		foreach (HexInfo h in cellInfo.Values) {
 			var x = (float)h.PhysicalCoordinates.x / (width * cellRadius);
 			var y = (float)h.PhysicalCoordinates.y / (height * cellRadius);
 			if (h.Filled) {
@@ -198,16 +192,18 @@ public class HexGridBasic : MonoBehaviour
 				h.Cell = cell;
 			}
 			else {
-				GameObject c = Instantiate(emptyCellPrefabTEMP);
+				EmptyCell cell = Instantiate(emptyCellPrefab);
 				if (!h.Reachable) {
-					c.GetComponent<SpriteRenderer>().color = new Color(x, y, 1);
+					cell.color = new Color(x, y, 1);
 				}
 				else {
-					c.GetComponent<SpriteRenderer>().color = new Color(0.0f, 1f * h.NumTouchedWalls / 6f, 0.0f);
+					cell.color = new Color(0.0f, 1f * h.NumTouchedWalls / 6f, 0.0f);
 				}
-				c.transform.SetParent(transform, false);
-				c.transform.localPosition = new Vector3(h.PhysicalCoordinates.x, h.PhysicalCoordinates.y, 0.5f);
-				c.transform.localScale = Vector3.one * cellRadius;
+				cell.transform.SetParent(transform, false);
+				cell.transform.localPosition = new Vector3(h.PhysicalCoordinates.x, h.PhysicalCoordinates.y, 0.5f);
+				cell.transform.localScale = Vector3.one * cellRadius;
+				cell.coords = h.Coordinates;
+				h.Cell = cell;
 			}
 		}
 	}

@@ -7,13 +7,21 @@ public class HexGrid : HexGridBasic
 {
 	public static event System.EventHandler<HexGrid> GridGenerated;
 
-	public void Init(LevelData data = null, Tower towerPrefab = null, Line linePrefab = null) {
+	public int GetNumReachableEmptyCells() {
+		return cellInfo.Values.Count(c => c.Cell is EmptyCell && c.Reachable);
+	}
+
+	public void Init(LevelData data = null, Line linePrefab = null) {
 		if(data) {
 			InitGrid(data?.Seed);
 			//towers
 			foreach(TowerData td in data.Towers) {
-				Tower t = Instantiate(towerPrefab);
-				t.CreateFromData(td, this);
+				if (td.IsSwitch) {
+					Switch.CreateInstance().CreateFromData(td, this);
+				}
+				else {
+					Tower.CreateInstance().CreateFromData(td, this);
+				}
 			}
 			//lines
 			foreach(LineData ld in data.Lines) {
@@ -130,4 +138,105 @@ public class HexGrid : HexGridBasic
         posRot.z = Vector2.SignedAngle(Vector2.down, diff);
         return posRot;
     }
+
+	public void CreateSwitches(int numSwitches = 4) {
+		// divide entire grid up into 9 zones in a 3x3 formation,
+		// remove the zones with the start and end point
+		// select `numSwitches` zones to put switches in
+
+		int leftZoneBoundaryX = width / 3;
+		int rightZoneBoundaryX = 2 * width / 3;
+		int topZoneBoundaryY = 2 * height / 3;
+		int bottomZoneBoundaryY = height / 3;
+
+		int getZone(Vector3Int v) {
+			int z = 0;
+			if(v.x > rightZoneBoundaryX) {
+				z += 2;
+			} else if ( v.x >  leftZoneBoundaryX) {
+				z += 1;
+			}
+			if(v.y > topZoneBoundaryY) {
+				z += 6; // 3 * 2
+			}
+			else if(v.y > bottomZoneBoundaryY) {
+				z += 3;
+			}
+			return z;
+		};
+
+		int startZone = getZone(StartingPoint.Coordinates.GetRepresentationalCoordinates());
+		int endZone = getZone(EndingPoint.Coordinates.GetRepresentationalCoordinates());
+		List<int> availableZones = Enumerable.Range(0, 9).Where(e => e != startZone && e != endZone).ToList();
+
+		List<int> switchZones = new List<int>();
+		for(int i = 0; i < numSwitches; i++) {
+			int num = UnityEngine.Random.Range(0, availableZones.Count);
+			switchZones.Add(availableZones[num]);
+			availableZones.RemoveAt(num);
+		}
+
+		int border = System.Math.Min(height, width) / 10;
+
+		HexCoordinates getRandomHexInZone(int zone) {
+			int xZone = zone % 3;
+			int yZone = zone / 3;
+
+			int xGridPos, yGridPos;
+			switch(xZone) {
+				default:
+				case 0:
+					xGridPos = UnityEngine.Random.Range(0, leftZoneBoundaryX - border);
+					break;
+				case 1:
+					xGridPos = UnityEngine.Random.Range(leftZoneBoundaryX + border, rightZoneBoundaryX - border);
+					break;
+				case 2:
+					xGridPos = UnityEngine.Random.Range(rightZoneBoundaryX + border, width);
+					break;
+			}
+			switch (yZone) {
+				default:
+				case 0:
+					yGridPos = UnityEngine.Random.Range(0, bottomZoneBoundaryY - border);
+					break;
+				case 1:
+					yGridPos = UnityEngine.Random.Range(bottomZoneBoundaryY + border, topZoneBoundaryY - border);
+					break;
+				case 2:
+					yGridPos = UnityEngine.Random.Range(topZoneBoundaryY + border, height);
+					break;
+			}
+
+			return HexCoordinates.FromRepresentationalCoordinates(xGridPos, yGridPos);
+		}
+
+		for(int i = 0; i < switchZones.Count; i++) {
+			bool foundPosition = false;
+			int attempts = 0;
+			int zone = switchZones[i];
+			while(!foundPosition) {
+				attempts = 0;
+				do {
+					HexCoordinates h = getRandomHexInZone(zone);
+					if(cellInfo[h].Reachable && cellInfo[h].NumTouchedWalls > 0) {
+						Switch s = Switch.CreateInstance();
+						s.GridPosition = h;
+						s.Place(this);
+						foundPosition = true;
+						Debug.Log($"Found in zone {zone} in {attempts} attempts");
+					}
+					attempts++;
+				} while (!foundPosition && attempts < 10);
+
+				// this zone can't find a place, search another zone for position
+				if(!foundPosition) {
+					Debug.Log($"Failed to find in zone {zone}");
+					int num = UnityEngine.Random.Range(0, availableZones.Count);
+					zone = availableZones[num];
+					availableZones.RemoveAt(num);
+				}
+			}
+		}
+	}
 }

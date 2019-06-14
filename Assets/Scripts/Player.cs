@@ -35,6 +35,7 @@ public class Player : LineRider, CameraFollowable
 	private float maxSpeed = 30f;
 
 	private Line disabledLine;
+	private Tower connectedTower;
 
 	// Camera Followable
 	public Vector2 Velocity { get => velocity; }
@@ -57,6 +58,11 @@ public class Player : LineRider, CameraFollowable
 
 	public void Init(Tower startTower) {
 		
+	}
+
+	private void ResetDashAndJump() {
+		dashAvailable = true;
+		availableJumpCount = 2;
 	}
 
 	public void SetActive(Tower startTower) {
@@ -115,6 +121,19 @@ public class Player : LineRider, CameraFollowable
 						LineSpeed -= LineSpeed * 0.1f * Time.fixedDeltaTime;
 					}
 				}
+				else if(connectedTower != null) {
+					Vector2 dist = connectedTower.PhysicalHeadPosition - (Vector2)transform.position; // throw out z
+					float ms = moveSpeed * Time.fixedDeltaTime;
+					if(dist.magnitude > ms) {
+						transform.position += (Vector3)dist.normalized * ms;
+					}
+					else {
+						transform.position += (Vector3)dist;
+					}
+					if (moveSpeed > minSpeed) {
+						moveSpeed -= ms;
+					}
+				}
 			}
 			else {
 				float speedLossModifier = 0.25f;
@@ -140,11 +159,10 @@ public class Player : LineRider, CameraFollowable
 						else {
 							velocity.y = 0;
 						}
-						availableJumpCount = 2;
-						dashAvailable = true;
+						ResetDashAndJump();
 						speedLossModifier = 1f;
 					}
-					else if (controller.collisions.above) {
+					else if (controller.collisions.above && !controller.collisions.ridingSlopedWall) {
 						velocity.y = 0;
 					}
 				}
@@ -175,11 +193,13 @@ public class Player : LineRider, CameraFollowable
 				velocity.y = -0.2f;
 			}
 			disabledLine = ConnectedLine;
-			StartCoroutine(DisableConnectionForTime());
+			Invoke("RemoveDisabledLine", 0.5f);
 			Debug.Log($"Leaving line at {v} - movement velocity is {velocity}");
 		}
-		else if(up) {
-			velocity.y = maxJumpVelocity;
+		else if(connectedTower != null) {
+			velocity.x = lastInput.Horizontal * moveSpeed;
+			velocity.y = up ? maxJumpVelocity : 0;			
+			connectedTower = null;
 		}
 		base.Disconnect();
 	}
@@ -195,8 +215,7 @@ public class Player : LineRider, CameraFollowable
 			LineSpeed = Mathf.Clamp(Mathf.Abs(velocity.x) * modifier + Mathf.Abs(velocity.y) * 0.25f, minSpeed, maxSpeed);
 			Debug.Log($"Joining line at {velocity} - line velocity is {LineSpeed} - dot was {dot}");
 
-			availableJumpCount = 2;
-			dashAvailable = true;
+			ResetDashAndJump();
 			dashing = false;
 		}
 	}
@@ -251,19 +270,31 @@ public class Player : LineRider, CameraFollowable
 			dashAvailable = false;
 			dashing = true;
 			dashStartTime = Time.time;
-			availableJumpCount = 1;
+			availableJumpCount = availableJumpCount > 0 ? 1 : 0;
 		}
 	}
 
 	void CalculateVelocity() {
 		float targetVelocityX = inputDirection.x * moveSpeed;
 		velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocityX, ref velocityXSmoothing, (controller.collisions.below) ? .1f : .2f);
-		velocity.y += gravity * Time.deltaTime;	
+		velocity.y += gravity * Time.fixedDeltaTime;	
 	}
 
-	protected IEnumerator DisableConnectionForTime() {
-		yield return new WaitForSeconds(0.5f);
+	protected void RemoveDisabledLine() {
 		disabledLine = null;
+	}
+
+	private void OnTriggerEnter2D(Collider2D collider) {
+		if(collider.CompareTag("Tower")) {
+			// the head of tower is a child of the actual tower
+			Tower t = collider.transform?.parent.GetComponent<Tower>() ?? collider.transform.GetComponent<Tower>();
+			if(t.Lines.Count == 0) {
+				ResetDashAndJump();
+				IsConnected = true;
+				connectedTower = t;			
+			}
+			t.Touched();
+		}
 	}
 
 	//void HandleWallSliding() {

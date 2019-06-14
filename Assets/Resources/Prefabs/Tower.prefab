@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7008464575214786111}
   m_Layer: 0
   m_Name: Tower
-  m_TagString: Untagged
+  m_TagString: Tower
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -50,6 +50,8 @@ MonoBehaviour:
     y: 0
   PolePrefab: {fileID: 1098330644446891762, guid: fc94a9925e6d4f642852d502f22af655,
     type: 3}
+  Lines: []
+  IsSwitch: 0
 --- !u!50 &7008464575214786111
 Rigidbody2D:
   serializedVersion: 4
@@ -81,9 +83,10 @@ GameObject:
   m_Component:
   - component: {fileID: 4530048172763777269}
   - component: {fileID: 4530048172763777274}
+  - component: {fileID: 304126152349806357}
   m_Layer: 0
   m_Name: elec_tower_header
-  m_TagString: Untagged
+  m_TagString: Tower
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -150,3 +153,19 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!58 &304126152349806357
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4530048172763777268}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0.99999976}
+  serializedVersion: 2
+  m_Radius: 0.21039541

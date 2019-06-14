@@ -16,12 +16,12 @@ public class LevelManager : ContextManager
 	}
 
 	public LevelData LevelData;
+	public LevelType LevelType;
 
 	public bool InPlacementMode = true;
 	public event EventHandler<bool> PlacementModeChange;
 
 	// For Placement Mode
-	public Tower TowerPrefab;
 	private Tower Tower;
 
 	public Line LinePrefab;
@@ -42,6 +42,16 @@ public class LevelManager : ContextManager
 	public Player Player { get; set; }
 	public Tower StartTower { get => Grid.StartingPoint.TowerHead; }
 
+	// Win Conditions
+	public int ReachedCells;
+	public int ReachableCells;
+
+	public int NumSwitches;
+	public int ReachedSwitches;
+
+	public int NumEnemies;
+	public int KilledEnemies;
+
 	public override void Awake() {
 		base.Awake();
 		main = Camera.main;
@@ -49,18 +59,36 @@ public class LevelManager : ContextManager
 
 		Grid = GameObject.FindObjectOfType<HexGrid>();
 		if(LevelData != null) {
-			Grid.Init(LevelData, TowerPrefab, LinePrefab);
+			Grid.Init(LevelData, LinePrefab);
 		}
 		else {
 			Grid.Init();
 		}
-		
+
+		switch (LevelType) {
+			case LevelType.Switches:
+				Switch.SwitchActivated += SwitchActivated;
+				if(LevelData == null) {
+					Grid.CreateSwitches();
+				}
+				break;
+			case LevelType.Tiles:
+				EmptyCell.TileFlipped += TileFlipped;
+				ReachableCells = Grid.GetNumReachableEmptyCells();
+				break;
+			case LevelType.Kills:
+				// TODO: Add event for enemy dying and link to EnemyKilled
+				break;
+			default:
+				break;
+		}
+
 		SetCameraPosition(Grid.StartingPoint.PhysicalCoordinates);
 	}
 
 	public override void Start()
     {
-		Tower = GameObject.Instantiate<Tower>(TowerPrefab);
+		Tower = Tower.CreateInstance();
 		Tower.transform.localScale = Vector3.one * Grid.OuterRadius * Tower.transform.localScale.x / 2f;
     }
 
@@ -144,10 +172,10 @@ public class LevelManager : ContextManager
 		if ((lastInput != null && lastInput.LeftMouse) && !p.LeftMouse) {
 			// place
 			if (!dragging && mouseOnScreen && Tower.gameObject.activeInHierarchy) {
-				Tower.Place();
-				Grid.PlaceTower(Tower);
-
-				Tower = GameObject.Instantiate<Tower>(TowerPrefab);
+				// lock this tower to the grid space
+				Tower.Place(Grid);
+				// create new tower for placement mode (the one we drag around that's transparent)
+				Tower = Tower.CreateInstance();
 				Tower.transform.localScale = Vector3.one * Grid.OuterRadius * Tower.transform.localScale.x / 2f;
 			}
 
@@ -201,4 +229,22 @@ public class LevelManager : ContextManager
 
 		lastInput = p;
 	}
+
+	public void SwitchActivated(object sender, EventArgs e) {
+		Switch s = sender as Switch;
+	}
+
+	public void EnemyKilled(object sender, EventArgs e) {
+
+	}
+
+	public void TileFlipped(object sender, EventArgs e) {
+
+	}
+}
+
+public enum LevelType {
+	Switches,
+	Tiles,
+	Kills
 }

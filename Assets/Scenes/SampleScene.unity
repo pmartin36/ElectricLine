@@ -142,14 +142,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f5a1e2c115c86c48b91f7c99d76a667, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LevelData: {fileID: 11400000, guid: 42a341cadada47443a518aba96c6edff, type: 2}
+  LevelData: {fileID: 0}
+  LevelType: 0
   InPlacementMode: 1
-  TowerPrefab: {fileID: 4530048172618260895, guid: 119a1d5bb60021a4ba240d63d137f7d4,
-    type: 3}
   LinePrefab: {fileID: 7271139356809661493, guid: 33d1c751cd5020f4d97c616b4de5eb4f,
     type: 3}
   playerPrefab: {fileID: 6439591459070571758, guid: b17e665a8963bfb4da43f0660b55807f,
     type: 3}
+  ReachedCells: 0
+  ReachableCells: 0
+  NumSwitches: 0
+  ReachedSwitches: 0
+  NumEnemies: 0
+  KilledEnemies: 0
 --- !u!114 &264916107
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -302,7 +307,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc6939a4934bfd749895bcc0ea556c47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cellRadius: 2
+  cellRadius: 4
   width: 24
   height: 20
   Direction: 1
@@ -310,7 +315,7 @@ MonoBehaviour:
     type: 3}
   finishCellPrefabTEMP: {fileID: 3312932125628372126, guid: e3664624ec2cd0d4cb97ef88cd18bd75,
     type: 3}
-  emptyCellPrefabTEMP: {fileID: 2907141704480883561, guid: 6224cbb398ca75f46bd49d80b1790525,
+  emptyCellPrefab: {fileID: 7719496480410794264, guid: 6224cbb398ca75f46bd49d80b1790525,
     type: 3}
   cellPrefab: {fileID: 1102570633338617284, guid: 3cb56d99a4fdc2e4aabb82a919139265,
     type: 3}
