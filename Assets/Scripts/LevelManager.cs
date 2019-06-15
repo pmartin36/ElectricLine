@@ -19,7 +19,7 @@ public class LevelManager : ContextManager
 	public LevelType LevelType;
 
 	public bool InPlacementMode = true;
-	public event EventHandler<bool> PlacementModeChange;
+	public event EventHandler<bool> PlacementModeChange;  // TODO: Maybe better to just tell the camera to change position
 
 	// For Placement Mode
 	private Tower Tower;
@@ -30,7 +30,7 @@ public class LevelManager : ContextManager
 	private Camera main;
 	private InputPackage lastInput;
 
-	private float maxCameraSize = 11f;
+	private float maxCameraSize = 20f;
 	private float minCameraSize = 5f;
 	private float cameraSizeDiff { get => maxCameraSize - minCameraSize; }
 
@@ -43,18 +43,16 @@ public class LevelManager : ContextManager
 	public Tower StartTower { get => Grid.StartingPoint.TowerHead; }
 
 	// Win Conditions
-	public int ReachedCells;
-	public int ReachableCells;
+	public int Depth { get; set; }
+	public WinCondition WinCondition { get; private set; }
 
-	public int NumSwitches;
-	public int ReachedSwitches;
-
-	public int NumEnemies;
-	public int KilledEnemies;
+	// Canvas
+	public ScreenSpaceCanvas Canvas;
 
 	public override void Awake() {
 		base.Awake();
 		main = Camera.main;
+		Canvas = GameObject.FindObjectOfType<ScreenSpaceCanvas>();
 		HexGrid.GridGenerated += GridGenerated;
 
 		Grid = GameObject.FindObjectOfType<HexGrid>();
@@ -66,18 +64,23 @@ public class LevelManager : ContextManager
 		}
 
 		switch (LevelType) {
-			case LevelType.Switches:
+			case LevelType.Switches:			
 				Switch.SwitchActivated += SwitchActivated;
-				if(LevelData == null) {
-					Grid.CreateSwitches();
+
+				WinCondition = new SwitchWinCondition(Depth);
+				if (LevelData == null) {
+					Grid.CreateSwitches(WinCondition.Total);
 				}
 				break;
 			case LevelType.Tiles:
 				EmptyCell.TileFlipped += TileFlipped;
-				ReachableCells = Grid.GetNumReachableEmptyCells();
+
+				WinCondition = new TileFlipCondition(Grid.GetNumReachableEmptyCells(), Depth);
 				break;
 			case LevelType.Kills:
 				// TODO: Add event for enemy dying and link to EnemyKilled
+
+				WinCondition = new EnemyWinCondition(Depth);
 				break;
 			default:
 				break;
@@ -127,7 +130,10 @@ public class LevelManager : ContextManager
 		InPlacementMode = false;
 		GameObject.Destroy(Tower.gameObject);
 		PlacementModeChange?.Invoke(this, InPlacementMode);
-		Player.SetActive(Grid.StartingPoint.TowerHead);
+
+		Tower t = Grid.StartingPoint.TowerHead;
+		t.Place(Grid);
+		Player.SetActive(t);
 	}
 
 	public override void HandleInput(InputPackage p) {
@@ -232,6 +238,10 @@ public class LevelManager : ContextManager
 
 	public void SwitchActivated(object sender, EventArgs e) {
 		Switch s = sender as Switch;
+		WinCondition.IncrementCurrent();
+		if(WinCondition.IsTargetReached) {
+			(Grid.EndingPoint.HexGameObject as EndGate).Open();
+		}
 	}
 
 	public void EnemyKilled(object sender, EventArgs e) {
@@ -240,6 +250,10 @@ public class LevelManager : ContextManager
 
 	public void TileFlipped(object sender, EventArgs e) {
 
+	}
+
+	public void SwitchLevel(int direction) {
+		Canvas.BlackScreen(() => GameManager.Instance.ReloadLevel());
 	}
 }
 

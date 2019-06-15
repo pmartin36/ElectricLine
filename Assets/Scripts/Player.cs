@@ -5,8 +5,10 @@ using UnityEngine;
 
 public class Player : LineRider, CameraFollowable
 {
+	private bool acceptingInputs = true;
 	private InputPackage lastInput;
 	private Vector3 inputDirection;
+
 	private SpriteRenderer spriteRenderer;
 
 	// Physics
@@ -72,6 +74,8 @@ public class Player : LineRider, CameraFollowable
 	}
 
 	public void HandleInput(InputPackage p) {
+		if(!acceptingInputs) return;
+
 		inputDirection = new Vector3(p.Horizontal, p.Vertical);
 
 		if(p.Drop && !lastInput.Drop) {
@@ -106,6 +110,9 @@ public class Player : LineRider, CameraFollowable
 				}
 			}
 			base.SelectLine(t);
+		}
+		else if(t.Lines.Count == 0) {
+			connectedTower = t;
 		}
 		else {
 			base.SelectLine(t);
@@ -250,7 +257,8 @@ public class Player : LineRider, CameraFollowable
 					velocity.y = maxJumpVelocity;
 				}
 			}
-			availableJumpCount--;
+			// TODO: Wile E Coyote
+			availableJumpCount = controller.collisions.below ? 1 : 0;
 			jumpInProgress = true;
 		}
 		
@@ -270,7 +278,6 @@ public class Player : LineRider, CameraFollowable
 			dashAvailable = false;
 			dashing = true;
 			dashStartTime = Time.time;
-			availableJumpCount = availableJumpCount > 0 ? 1 : 0;
 		}
 	}
 
@@ -294,6 +301,15 @@ public class Player : LineRider, CameraFollowable
 				connectedTower = t;			
 			}
 			t.Touched();
+		}
+		else if(collider.CompareTag("Gate")) {
+			EndGate g = collider.GetComponent<EndGate>();
+			if(g.IsOpen) {
+				acceptingInputs = false;
+
+				// next level
+				GameManager.Instance.LevelManager.SwitchLevel(1);
+			}
 		}
 	}
 

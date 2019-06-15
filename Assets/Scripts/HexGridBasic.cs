@@ -52,7 +52,7 @@ public class HexGridBasic : MonoBehaviour
 	protected Dictionary<HexCoordinates, HexInfo> cellInfo;
 
 	public HexInfo StartingPoint;
-	protected HexInfo EndingPoint;
+	public HexInfo EndingPoint;
 
 	protected virtual void Start() {
 		
@@ -80,7 +80,7 @@ public class HexGridBasic : MonoBehaviour
 		GenerateGrid();
 	}
 
-	protected void GenerateGrid() {	
+	protected virtual void GenerateGrid() {	
 		SetStartEnd();
 		CreateWallBorder();
 		var activeList = new List<HexCoordinates>() { StartingPoint.Coordinates };
@@ -147,17 +147,13 @@ public class HexGridBasic : MonoBehaviour
 			return;
 		}
 
+
 		// Create start/end cells
 		GameObject startCell = Instantiate(startCellPrefabTEMP);
-		startCell.transform.eulerAngles = new Vector3(0,0,180);
-		startCell.transform.position = new Vector3(StartingPoint.PhysicalCoordinates.x, StartingPoint.PhysicalCoordinates.y, -0.5f);
-		startCell.transform.localScale = Vector3.one * metrics.OuterRadius / 2f;
-		StartingPoint.TowerHead = startCell.GetComponent<Tower>();
+		InitStartCellFromCellInfo(startCell);
 
 		GameObject endCell = Instantiate(finishCellPrefabTEMP);
-		endCell.transform.position = new Vector3(EndingPoint.PhysicalCoordinates.x, EndingPoint.PhysicalCoordinates.y, -0.5f);
-		endCell.transform.localScale = Vector3.one * metrics.OuterRadius / 2f;
-		EndingPoint.TowerHead = endCell.GetComponent<Tower>();
+		InitEndCellFromCellInfo(endCell);
 
 		// fill in unreachable points
 		for (int y = 0; y < height; y++) {
@@ -171,6 +167,17 @@ public class HexGridBasic : MonoBehaviour
 		}
 
 		CreateCellsFromCellInfo();
+	}
+
+	protected virtual void InitStartCellFromCellInfo(GameObject startCell) {	
+		startCell.transform.eulerAngles = new Vector3(0, 0, 180);
+		startCell.transform.position = new Vector3(StartingPoint.PhysicalCoordinates.x, StartingPoint.PhysicalCoordinates.y, -0.5f);
+		startCell.transform.localScale = Vector3.one * metrics.OuterRadius / 2f;
+	}
+
+	protected virtual void InitEndCellFromCellInfo(GameObject endCell) {
+		endCell.transform.position = new Vector3(EndingPoint.PhysicalCoordinates.x, EndingPoint.PhysicalCoordinates.y, -0.5f);
+		endCell.transform.localScale = Vector3.one * metrics.OuterRadius / 2f;
 	}
 
 	protected virtual void CreateCellsFromCellInfo() {

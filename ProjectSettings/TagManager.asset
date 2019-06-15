@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - Tower
+  - Gate
   layers:
   - Default
   - TransparentFX

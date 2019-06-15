@@ -36,6 +36,20 @@ public class HexGrid : HexGridBasic
 		GridGenerated?.Invoke(this, this);
 	}
 
+	protected override void InitStartCellFromCellInfo(GameObject startCell) {
+		base.InitStartCellFromCellInfo(startCell);
+		Tower t = startCell.GetComponent<Tower>();
+		t.GridPosition = StartingPoint.Coordinates;
+		StartingPoint.TowerHead = t;
+	}
+
+	protected override void InitEndCellFromCellInfo(GameObject endCell) {
+		base.InitEndCellFromCellInfo(endCell);
+		EndingPoint.HexGameObject = endCell.GetComponent<EndGate>();
+	}
+
+	
+
 	public void TryGetTowerLocation(Vector3 position, Tower tower)
     {
         HexCoordinates hex = TryGetHexCoordinateFromWorldPosition(position, out bool success);

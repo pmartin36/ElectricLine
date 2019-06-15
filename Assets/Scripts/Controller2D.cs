@@ -26,9 +26,9 @@ public class Controller2D : RaycastController {
 		collisions.moveAmountOld = moveAmount;
 		playerInput = input;
 
-		//if (moveAmount.y < 0) {
-		//	DescendSlope(ref moveAmount);
-		//}
+		if (moveAmount.y < 0) {
+			DescendSlope(ref moveAmount);
+		}
 
 		if (moveAmount.x != 0) {
 			collisions.faceDir = (int)Mathf.Sign(moveAmount.x);
@@ -269,7 +269,7 @@ public class Controller2D : RaycastController {
 					else {
 						moveAmount.x = slopeMoveAmountX;
 					}
-					Debug.Log($"Overhung Up {(topLeftUp == hit ? "Left" : "Right")} ({moveAmount.x}, {moveAmount.y})");
+					// Debug.Log($"Overhung Up {(topLeftUp == hit ? "Left" : "Right")} ({moveAmount.x}, {moveAmount.y})");
 					return true;
 				}
 			}
@@ -300,7 +300,7 @@ public class Controller2D : RaycastController {
 
 					moveAmount.x = (distanceToSlopeStart + slopeMoveAmountX) * directionX;
 					moveAmount.y = Mathf.Min(slopeMoveAmountY, moveAmount.y);
-					Debug.Log($"Overhung {(directionX > 0 ? "Right" : "Left")} ({moveAmount.x}, {moveAmount.y})");
+					// Debug.Log($"Overhung {(directionX > 0 ? "Right" : "Left")} ({moveAmount.x}, {moveAmount.y})");
 					return true;
 				}
 			}

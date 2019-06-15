@@ -63,9 +63,8 @@ public class Tower : MonoBehaviour
 		header.color = Color.white;
 		for(int i = 0; i < Height - 1; i++) {
 			poles[i].GetComponent<SpriteRenderer>().color = Color.white;
-		}
+		}		
 		PhysicalHeadPosition = grid[GridPosition].PhysicalCoordinates;
-
 		grid.PlaceTower(this);
 	}
 
