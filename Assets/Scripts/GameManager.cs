@@ -29,21 +29,14 @@ public class GameManager : Singleton<GameManager> {
 			ContextManager = value;
 		}
 	}
-	//public MenuManager HouseManager {
-	//	get
-	//	{
-	//		return ContextManager as MenuManager;
-	//	}
-	//	set
-	//	{
-	//		ContextManager = value;
-	//	}
-	//}
+	
+	public PlayerData PlayerData { get; set; }
 
 	private bool InProgressSceneSwitch = false;
 
 	public void Awake() {
-		
+		// TODO: Load saved PlayerData
+		PlayerData = new PlayerData(2f, 1.25f, 0.2f);
 	}
 
 	public void HandleInput(InputPackage p) {

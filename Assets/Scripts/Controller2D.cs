@@ -26,9 +26,9 @@ public class Controller2D : RaycastController {
 		collisions.moveAmountOld = moveAmount;
 		playerInput = input;
 
-		if (moveAmount.y < 0) {
-			DescendSlope(ref moveAmount);
-		}
+		//if (moveAmount.y < 0) {
+		//	DescendSlope(ref moveAmount);
+		//}
 
 		if (moveAmount.x != 0) {
 			collisions.faceDir = (int)Mathf.Sign(moveAmount.x);

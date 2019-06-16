@@ -25,6 +25,7 @@ public class Player : LineRider, CameraFollowable
 	private bool dashing = false;
 	private float dashStartTime = -1f;
 	private Vector2 dashVelocity;
+	private float dashTime;
 
 	private Vector2 lastTowerPassVelocity;
 	private float lastTowerPassTime;
@@ -35,6 +36,11 @@ public class Player : LineRider, CameraFollowable
 	private float minSpeed = 8f;
 	private float moveSpeed = 8f;
 	private float maxSpeed = 30f;
+
+	//
+	private float maxEnergy;
+	private float energy;
+	public bool HasEnergy { get; protected set; }
 
 	private Line disabledLine;
 	private Tower connectedTower;
@@ -58,8 +64,10 @@ public class Player : LineRider, CameraFollowable
 		lastInput = new InputPackage();
 	}
 
-	public void Init(Tower startTower) {
-		
+	public void Init(Tower startTower, PlayerData data) {
+		energy = maxEnergy = data.MaxEnergy;
+		MaxJumpHeight = data.JumpHeight;
+		dashTime = data.DashTime;
 	}
 
 	private void ResetDashAndJump() {
@@ -74,7 +82,18 @@ public class Player : LineRider, CameraFollowable
 	}
 
 	public void HandleInput(InputPackage p) {
-		if(!acceptingInputs) return;
+		if(!acceptingInputs) {
+			inputDirection = Vector2.zero;
+			OnJumpInputUp();
+			return;
+		} 
+
+		if(!HasEnergy) {
+			// TODO: Player should continue falling in the same direction they were going when they had energy
+			// and level should fail when they hit the ground
+			OnJumpInputUp();
+			return;
+		}
 
 		inputDirection = new Vector3(p.Horizontal, p.Vertical);
 
@@ -141,6 +160,7 @@ public class Player : LineRider, CameraFollowable
 						moveSpeed -= ms;
 					}
 				}
+				SetEnergy(Time.fixedDeltaTime * 5f);
 			}
 			else {
 				float speedLossModifier = 0.25f;
@@ -150,7 +170,7 @@ public class Player : LineRider, CameraFollowable
 
 				if (dashing) {
 					controller.Move(dashVelocity * Time.fixedDeltaTime, inputDirection, out Vector2 vdiff);
-					if (Time.time - dashStartTime > 0.2f) {
+					if (Time.time - dashStartTime > dashTime) {
 						dashing = false;
 					}
 					velocity.y = 0;
@@ -177,7 +197,29 @@ public class Player : LineRider, CameraFollowable
 				if(moveSpeed > minSpeed) {
 					moveSpeed -= moveSpeed * speedLossModifier * Time.fixedDeltaTime;
 				}
+
+				SetEnergy(-Time.fixedDeltaTime / 2f);
 				base.NonLineActions();
+			}
+		}
+	}
+
+	void Update() {
+		GameManager.Instance.LevelManager.UpdateUIFromPlayer(energy);
+	}
+
+	private void SetEnergy(float delta) {
+		energy = Mathf.Clamp(energy + delta, 0, maxEnergy);
+		if(energy > 0) {
+			HasEnergy = true;
+		}
+		else {
+			HasEnergy = false;
+			if(controller.collisions.below) {
+				// TODO, this should actually be a loss but we're doing a switch level to fake death
+				Active = false;
+				inputDirection = Vector2.zero;
+				GameManager.Instance.LevelManager.SwitchLevel(1);
 			}
 		}
 	}
@@ -245,6 +287,8 @@ public class Player : LineRider, CameraFollowable
 		if(availableJumpCount > 0) {
 			if(IsConnected) {
 				Disconnect(true);
+				// TODO: Wile E Coyote
+				availableJumpCount =  1;
 			}
 			else {
 				if (controller.collisions.slidingDownMaxSlope) {
@@ -256,9 +300,10 @@ public class Player : LineRider, CameraFollowable
 				else {
 					velocity.y = maxJumpVelocity;
 				}
+				// TODO: Wile E Coyote
+				availableJumpCount = controller.collisions.below ? 1 : 0;
 			}
-			// TODO: Wile E Coyote
-			availableJumpCount = controller.collisions.below ? 1 : 0;
+			
 			jumpInProgress = true;
 		}
 		
@@ -311,6 +356,10 @@ public class Player : LineRider, CameraFollowable
 				GameManager.Instance.LevelManager.SwitchLevel(1);
 			}
 		}
+	}
+
+	void OnDestroy() {
+		Debug.Log("Destroyed");
 	}
 
 	//void HandleWallSliding() {

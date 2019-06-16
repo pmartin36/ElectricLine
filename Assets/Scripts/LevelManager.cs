@@ -93,13 +93,15 @@ public class LevelManager : ContextManager
     {
 		Tower = Tower.CreateInstance();
 		Tower.transform.localScale = Vector3.one * Grid.OuterRadius * Tower.transform.localScale.x / 2f;
+
+		Canvas.InitEnergySlider(GameManager.Instance.PlayerData.MaxEnergy);
     }
 
 	public void GridGenerated(object sender, HexGrid grid) {
 		this.Grid = grid;
 		// start the game
 		Player = Instantiate(playerPrefab, grid.StartingPoint.PhysicalCoordinates, Quaternion.identity);
-		// Player.Init(grid.StartingPoint.TowerHead);
+		Player.Init(grid.StartingPoint.TowerHead, GameManager.Instance.PlayerData);
 	}
 
 	private void SetCameraPosition(Vector3 position) {
@@ -254,6 +256,17 @@ public class LevelManager : ContextManager
 
 	public void SwitchLevel(int direction) {
 		Canvas.BlackScreen(() => GameManager.Instance.ReloadLevel());
+	}
+
+	public void UpdateUIFromPlayer(float energy) {
+		Canvas.UpdateEnergySlider(energy);
+	}
+
+	private void OnDestroy() {
+		HexGrid.GridGenerated -= GridGenerated;
+		Switch.SwitchActivated -= SwitchActivated;
+		EmptyCell.TileFlipped -= TileFlipped;
+		PlacementModeChange = null;
 	}
 }
 
