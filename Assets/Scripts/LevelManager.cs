@@ -29,6 +29,7 @@ public class LevelManager : ContextManager
 
 	private Camera main;
 	private InputPackage lastInput;
+	private HexInfo lastHoverHex;
 
 	private float maxCameraSize = 20f;
 	private float minCameraSize = 5f;
@@ -172,70 +173,92 @@ public class LevelManager : ContextManager
 		Vector2 vpSpace = main.WorldToViewportPoint(p.MousePositionWorldSpace);
 		bool mouseOnScreen = vpSpace.x < 1 && vpSpace.x >= 0 && vpSpace.y < 1 && vpSpace.y >= 0;
 
-		if (!lineCreationInProgress) {
+		if (!lineCreationInProgress && !p.RightMouse) {
 			Grid.TryGetTowerLocation(p.MousePositionWorldSpace, Tower);
 		}
 
-		// mouseup
-		if ((lastInput != null && lastInput.LeftMouse) && !p.LeftMouse) {
-			// place
-			if (!dragging && mouseOnScreen && Tower.gameObject.activeInHierarchy) {
-				// lock this tower to the grid space
-				Tower.Place(Grid);
-				// create new tower for placement mode (the one we drag around that's transparent)
-				Tower = Tower.CreateInstance();
-				Tower.transform.localScale = Vector3.one * Grid.OuterRadius * Tower.transform.localScale.x / 2f;
-			}
-
-			dragging = false;
-		}
-		// mousehold
-		else if (lastInput != null && lastInput.LeftMouse && p.LeftMouse) {
-			// dragging camera
-			var diff = (p.MousePositionScreenSpace - lastInput.MousePositionScreenSpace) * Time.deltaTime *
-				Mathf.Lerp(0.5f, 1.4f, (main.orthographicSize - minCameraSize) / cameraSizeDiff) * Settings.ScrollSpeed;
-			Vector3 newPosition = main.transform.position - diff;
-			SetCameraPosition(newPosition);
-
-			if (diff.sqrMagnitude > 0.01f) {
-				dragging = true;
-			}
-		}
-
-		if ((lastInput == null || !lastInput.RightMouse) && p.RightMouse) {
-			HexInfo h = Grid.TryGetCellInfoFromWorldPosition(p.MousePositionWorldSpace, out bool success);
-			if (success) {
-				if (h.TowerHead != null) {
-					lineCreationInProgress = true;
-					Tower.gameObject.SetActive(false);
-					Line = Instantiate(LinePrefab, h.PhysicalCoordinates, Quaternion.identity);
-					Line.gameObject.SetActive(true);
-					Line.Init(Grid, p.MousePositionWorldSpace);
+		HexInfo h = Grid.TryGetCellInfoFromWorldPosition(p.MousePositionWorldSpace, out bool mouseOverCellSuccess);
+		// left mousedown
+		if (lastInput != null && !lastInput.LeftMouse && p.LeftMouse) {
+			if(p.Shift) {
+				if (mouseOverCellSuccess) {
+					if (h.TowerHead != null) {
+						lineCreationInProgress = true;
+						Tower.gameObject.SetActive(false);
+						Line = Instantiate(LinePrefab, h.PhysicalCoordinates, Quaternion.identity);
+						Line.gameObject.SetActive(true);
+						Line.Init(Grid, p.MousePositionWorldSpace);
+					}
 				}
 			}
 		}
-		else if (p.RightMouse && lineCreationInProgress) {
-			// Update line with position
-			Line.Update(p.MousePositionWorldSpace);
-		}
-		else if (!p.RightMouse && lineCreationInProgress) {
-			// verify final spot is actually tower head
-			// if so, create line
-			HexInfo h = Grid.TryGetCellInfoFromWorldPosition(p.MousePositionWorldSpace, out bool success);
-			success = success && Line.IsValidPlacement(h);
-			if (success) {
-				Line.Place(h);
-				Debug.Log("Line placed");
+		// left mousehold
+		else if (lastInput != null && lastInput.LeftMouse && p.LeftMouse) {
+			// dragging camera
+			if(lineCreationInProgress) {
+				// Update line with position
+				Line.Update(p.MousePositionWorldSpace);
 			}
 			else {
-				Destroy(Line.gameObject);
-				Debug.Log("Line not placed");
+				var diff = (p.MousePositionScreenSpace - lastInput.MousePositionScreenSpace) * Time.deltaTime *
+					Mathf.Lerp(0.5f, 1.4f, (main.orthographicSize - minCameraSize) / cameraSizeDiff) * Settings.ScrollSpeed;
+				Vector3 newPosition = main.transform.position - diff;
+				SetCameraPosition(newPosition);
+
+				if (diff.sqrMagnitude > 0.01f) {
+					dragging = true;
+				}
 			}
-			lineCreationInProgress = false;
-			Tower.gameObject.SetActive(true);
+		}
+		// left mouseup
+		else if (lastInput != null && lastInput.LeftMouse && !p.LeftMouse) {
+			if(lineCreationInProgress) {
+				// verify final spot is actually tower head
+				// if so, create line
+				bool success = mouseOverCellSuccess && Line.IsValidPlacement(h);
+				if (success) {
+					Line.Place(h);
+					Debug.Log("Line placed");
+				}
+				else {
+					Destroy(Line.gameObject);
+					Debug.Log("Line not placed");
+				}
+				lineCreationInProgress = false;
+				Tower.gameObject.SetActive(true);
+			}
+			else {
+				// place
+				if (!dragging && mouseOnScreen && Tower.gameObject.activeInHierarchy) {
+					// lock this tower to the grid space
+					Tower.Place(Grid);
+					// create new tower for placement mode (the one we drag around that's transparent)
+					Tower = Tower.CreateInstance();
+					Tower.transform.localScale = Vector3.one * Grid.OuterRadius * Tower.transform.localScale.x / 2f;
+				}				
+			}
+			dragging = false;
+		}
+
+		// right mouse down
+		if ((lastInput == null || !lastInput.RightMouse) && p.RightMouse) {
+			if(mouseOverCellSuccess) {
+				h.ToggleMarkerStatus();
+			}
+		}
+		// right mouse hold
+		else if (lastInput == null || lastInput.RightMouse && p.RightMouse) {
+			if(lastHoverHex != null && mouseOverCellSuccess && lastHoverHex.Coordinates != h.Coordinates) {
+				h.ToggleMarkerStatus();
+			}
+		}
+		// right mouse up
+		else if (!p.RightMouse && lineCreationInProgress) {
+			
 		}
 
 		lastInput = p;
+		lastHoverHex = mouseOverCellSuccess ? h : null;
 	}
 
 	public void SwitchActivated(object sender, EventArgs e) {
